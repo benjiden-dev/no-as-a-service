@@ -23,10 +23,17 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-// Random rejection reason endpoint
+// Random rejection reason endpoint (API)
 app.get('/no', (req, res) => {
   const reason = reasons[Math.floor(Math.random() * reasons.length)];
   res.json({ reason });
+});
+
+// Plain text endpoint
+app.get('/', (req, res) => {
+  const reason = reasons[Math.floor(Math.random() * reasons.length)];
+  res.set('Content-Type', 'text/plain');
+  res.send(reason);
 });
 
 // Start server
