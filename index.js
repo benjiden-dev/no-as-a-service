@@ -29,11 +29,15 @@ app.get('/no', (req, res) => {
   res.json({ reason });
 });
 
-// Plain text endpoint
+// Serve static files from 'public' directory
+app.use(express.static('public'));
+app.use('/assets', express.static('assets'));
+
+// Plain text endpoint (optional, keeping it for backward compatibility or if requested specifically via header, otherwise static file handles root)
+// app.get('/', ... ) is no longer strictly needed for root if static is used, 
+// BUT to be explicit and ensure / serves index.html:
 app.get('/', (req, res) => {
-  const reason = reasons[Math.floor(Math.random() * reasons.length)];
-  res.set('Content-Type', 'text/plain');
-  res.send(reason);
+  res.sendFile(__dirname + '/public/index.html');
 });
 
 // Start server

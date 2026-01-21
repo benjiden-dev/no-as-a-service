@@ -1,0 +1,21 @@
+services:
+  no-as-a-service:
+    build: .
+    image: no-as-a-service:slim
+    container_name: no-as-a-service
+    restart: unless-stopped
+    networks:
+      - cloudflared-stack_default
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+    environment:
+      - PORT=${PORT}
+    env_file:
+      - .env
+
+networks:
+  cloudflared-stack_default:
+    external: true

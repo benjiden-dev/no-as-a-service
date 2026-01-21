@@ -6,6 +6,6 @@ COPY package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
 COPY . .
 USER node
-EXPOSE 3000
+EXPOSE 3005
 
 CMD ["npm", "start"]

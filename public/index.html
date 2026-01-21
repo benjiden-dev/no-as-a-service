@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NO.</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 id="reason">Loading...</h1>
+    </div>
+
+    <script>
+        async function fetchReason() {
+            try {
+                const response = await fetch('/no');
+                const data = await response.json();
+                document.getElementById('reason').innerText = data.reason;
+            } catch (error) {
+                console.error('Error fetching reason:', error);
+                document.getElementById('reason').innerText = "NO.";
+            }
+        }
+        
+        fetchReason();
+        
+        // Refresh on click
+        document.body.addEventListener('click', fetchReason);
+    </script>
+</body>
+</html>
