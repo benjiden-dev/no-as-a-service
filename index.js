@@ -2,7 +2,20 @@ const express = require('express');
 const cors = require("cors");
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
-const { createCanvas } = require('canvas');
+const path = require('path');
+const { createCanvas, registerFont } = require('canvas');
+
+// Register Fonts
+const fontsDir = path.join(__dirname, 'fonts');
+if (fs.existsSync(fontsDir)) {
+  fs.readdirSync(fontsDir).forEach(file => {
+    if ((file.endsWith('.ttf') || file.endsWith('.otf')) && !file.startsWith('._')) {
+      const family = file.replace(/\.(ttf|otf)$/, '').replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      registerFont(path.join(fontsDir, file), { family });
+      console.log(`Registered font: "${family}" from ${file}`);
+    }
+  });
+}
 
 const app = express();
 app.use(cors());
@@ -64,23 +77,37 @@ function sendImage(res, width, height) {
   const context = canvas.getContext('2d');
 
   // Background
-  context.fillStyle = '#f0f0f0';
+  const bgColor = process.env.IMG_BG_COLOR || '#f0f0f0';
+  context.fillStyle = bgColor;
   context.fillRect(0, 0, width, height);
 
   // Text configuration
-  context.fillStyle = '#333';
-  // Scale font size roughly based on width (base 80px for 1200w)
-  const fontSize = Math.floor(width / 15);
-  context.font = `bold ${fontSize}px sans-serif`;
+  const textColor = process.env.IMG_TEXT_COLOR || '#333';
+  const fontFamily = process.env.IMG_FONT_FAMILY || 'sans-serif';
+  context.fillStyle = textColor;
+  // Scale font size roughly based on width (base ~110px for 1200w, ~58px for 640w)
+  const fontSize = Math.floor(width / 11); 
+  context.font = `${fontSize}px "${fontFamily}", sans-serif`;
   context.textAlign = 'center';
   context.textBaseline = 'middle';
 
   // Wrap and draw text
-  // Adjust padding and line height based on font size
-  const padding = width * 0.1;
-  const lineHeight = fontSize * 1.1;
+  // Adjust padding (reduced to 5%) and line height (increased to 1.3 for fancy fonts)
+  const padding = width * 0.05;
+  const lineHeight = fontSize * 1.3;
+  
+  // Sanitize text to replace common unsupported characters in display fonts
+  const sanitizedReason = reason
+    .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
+    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+    .replace(/[\u2013\u2014]/g, "-") // En/Em dash
+    .replace(/\u00E9/g, "e")         // é
+    .replace(/\u2026/g, "...")       // Ellipsis
+    .replace(/[^\x00-\x7F]/g, "");   // Remove any remaining non-ASCII characters
 
-  wrapText(context, reason.toUpperCase(), width / 2, height / 2, width - padding, lineHeight);
+  console.log(`Rendering: "${sanitizedReason}" using font "${fontFamily}"`);
+
+  wrapText(context, sanitizedReason, width / 2, height / 2, width - padding, lineHeight);
 
   res.setHeader('Content-Type', 'image/png');
   canvas.createPNGStream().pipe(res);
