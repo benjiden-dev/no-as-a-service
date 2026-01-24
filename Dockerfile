@@ -1,14 +1,18 @@
 FROM node:22-slim
 ENV NODE_ENV=production
 
+# Build argument to control image generation support (defaults to true)
+ARG ENABLE_IMAGES=true
+# Persist the build arg as an environment variable for the running container
+ENV ENABLE_IMAGES=$ENABLE_IMAGES
+
 WORKDIR /app
 COPY --chown=node:node package*.json ./
 
-# Install dependencies for canvas and fonts
-# python3 is needed for node-gyp if build from source is required, 
-# but node:22-slim usually works well with prebuilds.
-# We install fontconfig for custom fonts.
-RUN apt-get update && \
+# Conditionally install system dependencies for canvas
+# If ENABLE_IMAGES is false, we skip this heavy step (~100MB+ saved)
+RUN if [ "$ENABLE_IMAGES" = "true" ]; then \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     libcairo2-dev \
@@ -18,16 +22,27 @@ RUN apt-get update && \
     librsvg2-dev \
     fontconfig \
     python3 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*; \
+    else \
+    echo "Skipping graphics libraries (Lightweight Mode)"; \
+    fi
 
-RUN npm install --omit=dev && \
+# Conditionally install dependencies
+# If ENABLE_IMAGES is false, we use --no-optional to skip 'canvas'
+RUN if [ "$ENABLE_IMAGES" = "true" ]; then \
+    npm install --omit=dev; \
+    else \
+    npm install --omit=dev --no-optional; \
+    fi && \
     npm cache clean --force
 
-# Copy custom fonts from local fonts/ directory to system font path
-# Debian font path is /usr/local/share/fonts or /usr/share/fonts
+# Copy custom fonts
 COPY fonts/ /usr/local/share/fonts/custom/
-# Refresh font cache
-RUN fc-cache -fv
+
+# Conditionally refresh font cache
+RUN if [ "$ENABLE_IMAGES" = "true" ]; then \
+    fc-cache -fv; \
+    fi
 
 COPY --chown=node:node . .
 USER node

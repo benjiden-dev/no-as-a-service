@@ -42,7 +42,7 @@ function getFonts() {
   });
 }
 
-const generateDockerCompose = (port, useExternalNetwork, networkName, exposeToHost) => {
+const generateDockerCompose = (port, useExternalNetwork, networkName, exposeToHost, enableImages) => {
   let networksConfig = '';
   let portsConfig = '';
 
@@ -65,7 +65,10 @@ networks:
 
   return `services:
   naas-img:
-    build: .
+    build:
+      context: .
+      args:
+        ENABLE_IMAGES: ${enableImages}
     image: naas-img:latest
     container_name: naas-img
     restart: unless-stopped
@@ -241,7 +244,7 @@ async function fullSetupWorkflow() {
   if (modeAnswer.mode === 'docker') {
     const useExternal = dockerNetAnswer.netType === 'internal';
     const expose = dockerNetAnswer.netType === 'standard' || dockerNetAnswer.forceExpose;
-    const composeContent = generateDockerCompose(appConfigAnswers.port, useExternal, dockerNetAnswer.networkName, expose);
+    const composeContent = generateDockerCompose(appConfigAnswers.port, useExternal, dockerNetAnswer.networkName, expose, featureAnswer.enableImages);
     fs.writeFileSync(DOCKER_COMPOSE_PATH, composeContent);
     console.log('✅ Generated docker-compose.yml.');
 
