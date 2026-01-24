@@ -1,18 +1,34 @@
 services:
-  no-as-a-service:
+  naas-img:
     build: .
-    image: no-as-a-service:slim
-    container_name: no-as-a-service
+    image: naas-img:latest
+    container_name: naas-img
     restart: unless-stopped
+    # Ports removed to prevent LAN access. 
+    # Accessible only via the internal network (e.g., Cloudflare Tunnel).
     networks:
       - cloudflared-stack_default
     deploy:
       resources:
         limits:
           cpus: '0.1'
-          memory: 128M
+          memory: 256M
+    # Security Hardening
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Mount a temporary file system for /tmp just in case.
+    tmpfs:
+      - /tmp
+    # Use node directly to avoid npm trying to write logs to the read-only filesystem
+    command: node index.js
     environment:
-      - PORT=${PORT}
+      - PORT=${PORT:-3005}
+      - IMG_BG_COLOR=${IMG_BG_COLOR:-#f0f0f0}
+      - IMG_TEXT_COLOR=${IMG_TEXT_COLOR:-#333}
+      - IMG_FONT_FAMILY=${IMG_FONT_FAMILY:-sans-serif}
     env_file:
       - .env
 
