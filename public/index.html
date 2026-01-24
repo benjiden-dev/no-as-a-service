@@ -4,29 +4,130 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NO.</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: '#333333',
+              'brand-strong': '#000000',
+              'brand-medium': '#666666',
+              'brand-subtle': '#999999',
+              'neutral-primary': '#ffffff',
+              'neutral-secondary-medium': '#f9fafb',
+              'default-medium': '#d1d5db',
+              'body': '#374151',
+              'fg-brand': '#333333'
+            },
+            borderRadius: {
+              'base': '0.375rem'
+            },
+            boxShadow: {
+              'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+            }
+          }
+        }
+      }
+    </script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="container">
-        <h1 id="reason">Loading...</h1>
+<body class="flex flex-col h-screen w-full bg-[#f0f0f0] overflow-hidden">
+    
+    <!-- Main Content -->
+    <div class="flex-grow flex items-center justify-center p-8 w-full">
+        <div class="container text-center max-w-[90vw]">
+            <h1 id="reason" class="text-6xl md:text-9xl font-bold text-[#333] uppercase leading-tight transition-opacity duration-200">Loading...</h1>
+        </div>
+    </div>
+
+    <!-- Hidden Input for Copying -->
+    <input id="reason-text" type="text" class="sr-only" readonly>
+
+    <!-- Bottom Right Controls -->
+    <div class="fixed bottom-6 right-6 flex items-center gap-2">
+        
+        <!-- Reload Button -->
+        <button type="button" onclick="fetchReason()" id="reload-btn" class="inline-flex items-center justify-center text-fg-brand bg-neutral-primary border border-brand hover:bg-brand hover:text-white focus:ring-4 focus:ring-brand-subtle rounded-base w-10 h-10 focus:outline-none transition-colors duration-200" title="Reload">
+            <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4"/>
+            </svg>
+            <span class="sr-only">Reload</span>
+        </button>
+
+        <!-- Copy Button (Icon only) -->
+        <button onclick="copyToClipboard()" id="copy-btn" class="inline-flex items-center justify-center text-fg-brand bg-neutral-primary border border-brand hover:bg-brand hover:text-white focus:ring-4 focus:ring-brand-subtle rounded-base w-10 h-10 focus:outline-none transition-all duration-200" title="Copy to Clipboard">
+            <span id="default-message" class="inline-flex items-center justify-center">
+                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                </svg>
+            </span>
+            <span id="success-message" class="hidden inline-flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5"/>
+                </svg>
+            </span>
+            <span class="sr-only">Copy</span>
+        </button>
     </div>
 
     <script>
         async function fetchReason() {
+            const reasonEl = document.getElementById('reason');
+            const inputEl = document.getElementById('reason-text');
+            const btn = document.getElementById('reload-btn');
+            
+            reasonEl.style.opacity = '0.5';
+            btn.classList.add('bg-brand', 'text-white'); 
+            
             try {
                 const response = await fetch('/no');
                 const data = await response.json();
-                document.getElementById('reason').innerText = data.reason;
+                reasonEl.innerText = data.reason;
+                inputEl.value = data.reason;
             } catch (error) {
                 console.error('Error fetching reason:', error);
-                document.getElementById('reason').innerText = "NO.";
+                reasonEl.innerText = "NO.";
+                inputEl.value = "NO.";
+            } finally {
+                reasonEl.style.opacity = '1';
+                setTimeout(() => {
+                    btn.classList.remove('bg-brand', 'text-white');
+                }, 200);
             }
+        }
+
+        function copyToClipboard() {
+            const copyText = document.getElementById("reason-text");
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                showCopiedFeedback();
+            }).catch(err => {
+                copyText.select();
+                document.execCommand("copy");
+                showCopiedFeedback();
+            });
+        }
+
+        function showCopiedFeedback() {
+            const defaultMsg = document.getElementById('default-message');
+            const successMsg = document.getElementById('success-message');
+            const copyBtn = document.getElementById('copy-btn');
+
+            defaultMsg.classList.add('hidden');
+            successMsg.classList.remove('hidden');
+            
+            // Temporary active state for the button
+            copyBtn.classList.add('bg-brand', 'text-white');
+
+            setTimeout(() => {
+                defaultMsg.classList.remove('hidden');
+                successMsg.classList.add('hidden');
+                copyBtn.classList.remove('bg-brand', 'text-white');
+            }, 2000);
         }
         
         fetchReason();
-        
-        // Refresh on click
-        document.body.addEventListener('click', fetchReason);
     </script>
 </body>
 </html>
