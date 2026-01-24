@@ -4,37 +4,67 @@
 
 A lightweight API that returns random rejection reasons as JSON or generated images.
 
-## ✨ New Features
-*   **Interactive Configuration:** A TUI wizard (`configure.js`) to set ports, colors, and fonts easily.
-*   **Dockerized:** Fully compatible with `docker compose` (v2) on Debian-based Node images.
-*   **Custom Fonts:** Automatic registration of custom fonts (supports `.ttf` and `.otf`) with improved rendering (no more "boxes").
-*   **Sanitization:** Smart handling of special characters (em-dashes, smart quotes) for decorative fonts.
+## Getting Started
 
-## 🚀 Getting Started
+### 1. Automated Setup and Management
+The interactive manager handles initial setup, environment configuration, and service deployment.
 
-### 1. Clone & Setup
 ```bash
 git clone https://github.com/benjiden-dev/no-as-a-service.git
 cd no-as-a-service
 npm install
+npm run setup
 ```
 
-### 2. Configure & Deploy
-Run the configuration wizard. This tool will scan your `fonts/` directory, help you pick colors, and automatically deploy the Docker container.
+The tool provides two distinct workflows:
+*   **Initial Setup:** Configures deployment mode (Docker or Native), feature toggles, networking, and visual styles.
+*   **Ongoing Management:** Once configured, the tool offers a simplified menu to update specific settings (colors, fonts, ports) or manage the service (restart, stop, view logs).
+
+---
+
+### 2. Manual Native Deployment
+For running without Docker, the project uses `forever` to manage the background process.
 
 ```bash
-node configure.js
+# Start in background
+npx forever start index.js
+
+# List running processes
+npx forever list
+
+# Stop the server
+npx forever stop index.js
 ```
 
-### 3. API Endpoints
+---
+
+### 3. Docker Deployment
+The manager generates a hardened `docker-compose.yml` based on your networking preferences.
+
+```bash
+docker compose up -d --build
+```
+
+#### Security and Hardening
+The Docker configuration includes several production-grade security measures:
+
+*   **Read-Only Filesystem:** The container filesystem is immutable, preventing unauthorized file modifications.
+*   **Dropped Capabilities:** All Linux kernel capabilities are removed to minimize the attack surface.
+*   **No New Privileges:** Prevents the application from gaining elevated permissions.
+*   **Non-Root User:** The process runs under the restricted `node` user account.
+*   **Resource Limits:** CPU and memory usage are capped to prevent resource exhaustion.
+*   **Isolated Networking:** Supports internal-only Docker networks for use with secure tunnels.
+
+---
+
+### 4. API Endpoints
 
 | Endpoint | Description |
 | :--- | :--- |
 | `/no` | Returns a random JSON rejection reason. |
-| `/img` | Returns a 1200x630 PNG image. |
-| `/simg` | Returns a 640x480 PNG image. |
-| `/mimg` | Returns a 800x600 PNG image. |
-| `/limg` | Returns a 1024x768 PNG image. |
+| `/S` | Returns a 640x480 (Small) PNG image. |
+| `/M` | Returns a 800x600 (Medium) PNG image. |
+| `/L` | Returns a 1024x768 (Large) PNG image. |
 
 ## 🛠 Manual Configuration
 If you prefer not to use the wizard, you can edit the `.env` file manually:
