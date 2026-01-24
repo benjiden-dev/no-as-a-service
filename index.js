@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require("cors");
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
+const { createCanvas } = require('canvas');
 
 const app = express();
 app.use(cors());
@@ -23,10 +24,63 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+// Helper for wrapping text on canvas
+function wrapText(context, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  const lines = [];
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = context.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      lines.push(line);
+      line = words[n] + ' ';
+    } else {
+      line = testLine;
+    }
+  }
+  lines.push(line);
+
+  const totalHeight = lines.length * lineHeight;
+  let startY = y - (totalHeight / 2) + (lineHeight / 2);
+
+  for (let i = 0; i < lines.length; i++) {
+    context.fillText(lines[i], x, startY + (i * lineHeight));
+  }
+}
+
 // Random rejection reason endpoint (API)
 app.get('/no', (req, res) => {
   const reason = reasons[Math.floor(Math.random() * reasons.length)];
   res.json({ reason });
+});
+
+// Image endpoint
+app.get('/img', (req, res) => {
+  const reason = reasons[Math.floor(Math.random() * reasons.length)];
+
+  const width = 1200;
+  const height = 630;
+  const canvas = createCanvas(width, height);
+  const context = canvas.getContext('2d');
+
+  // Background
+  context.fillStyle = '#f0f0f0';
+  context.fillRect(0, 0, width, height);
+
+  // Text
+  context.fillStyle = '#333';
+  context.font = 'bold 80px sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+
+  // Wrap and draw text
+  wrapText(context, reason.toUpperCase(), width / 2, height / 2, width - 100, 90);
+
+  res.setHeader('Content-Type', 'image/png');
+  canvas.createPNGStream().pipe(res);
 });
 
 // Serve static files from 'public' directory
