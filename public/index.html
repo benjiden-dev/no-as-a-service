@@ -49,7 +49,7 @@
     <div class="fixed bottom-6 right-6 flex items-center gap-2 z-50">
         
         <!-- Image Link Button -->
-        <a href="/M" target="_blank" class="inline-flex items-center justify-center text-fg-brand bg-neutral-primary border border-brand hover:bg-brand hover:text-white focus:ring-4 focus:ring-brand-subtle rounded-base w-10 h-10 focus:outline-none transition-colors duration-200" title="Open Image (Medium)">
+        <a href="/M" target="_blank" id="img-link-btn" class="inline-flex items-center justify-center text-fg-brand bg-neutral-primary border border-brand hover:bg-brand hover:text-white focus:ring-4 focus:ring-brand-subtle rounded-base w-10 h-10 focus:outline-none transition-colors duration-200" title="Open Image (Medium)">
             <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 16 5-7 6 6.5m6.5 2.5L16 13l-4.286 6M14 10h.01M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
             </svg>
@@ -85,6 +85,7 @@
             const reasonEl = document.getElementById('reason');
             const inputEl = document.getElementById('reason-text');
             const btn = document.getElementById('reload-btn');
+            const imgBtn = document.getElementById('img-link-btn');
             
             reasonEl.style.opacity = '0.5';
             btn.classList.add('bg-brand', 'text-white'); 
@@ -94,10 +95,13 @@
                 const data = await response.json();
                 reasonEl.innerText = data.reason;
                 inputEl.value = data.reason;
+                // Update Image Button Link with encoded reason
+                imgBtn.href = `/M?reason=${encodeURIComponent(data.reason)}`;
             } catch (error) {
                 console.error('Error fetching reason:', error);
                 reasonEl.innerText = "NO.";
                 inputEl.value = "NO.";
+                imgBtn.href = "/M?reason=NO.";
             } finally {
                 reasonEl.style.opacity = '1';
                 setTimeout(() => {
@@ -133,7 +137,23 @@
             }, 2000);
         }
         
-        fetchReason();
+        // Check configuration and fetch initial reason
+        async function init() {
+            try {
+                const configRes = await fetch('/config');
+                const config = await configRes.json();
+                
+                if (!config.imagesEnabled) {
+                    const imgBtn = document.getElementById('img-link-btn');
+                    if (imgBtn) imgBtn.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error('Failed to fetch config', e);
+            }
+            fetchReason();
+        }
+
+        init();
     </script>
 </body>
 </html>

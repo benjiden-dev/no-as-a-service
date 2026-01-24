@@ -31,6 +31,11 @@ app.get('/no', (req, res) => {
   res.json({ reason });
 });
 
+// Configuration endpoint
+app.get('/config', (req, res) => {
+  res.json({ imagesEnabled: process.env.ENABLE_IMAGES === 'true' });
+});
+
 // --- Image Generation Feature ---
 if (process.env.ENABLE_IMAGES === 'true') {
   const { createCanvas, registerFont } = require('canvas');
@@ -75,8 +80,12 @@ if (process.env.ENABLE_IMAGES === 'true') {
   }
 
   // Helper to generate and send image
-  function sendImage(res, width, height) {
-    const reason = reasons[Math.floor(Math.random() * reasons.length)];
+  function sendImage(res, width, height, customText = null) {
+    let reason = customText;
+    if (!reason) {
+        reason = reasons[Math.floor(Math.random() * reasons.length)];
+    }
+    
     const canvas = createCanvas(width, height);
     const context = canvas.getContext('2d');
 
@@ -119,11 +128,11 @@ if (process.env.ENABLE_IMAGES === 'true') {
 
   // Image endpoints
   // S: Small (640x480)
-  app.get('/S', (req, res) => sendImage(res, 640, 480));
+  app.get('/S', (req, res) => sendImage(res, 640, 480, req.query.reason));
   // M: Medium (800x600)
-  app.get('/M', (req, res) => sendImage(res, 800, 600));
+  app.get('/M', (req, res) => sendImage(res, 800, 600, req.query.reason));
   // L: Large (1024x768)
-  app.get('/L', (req, res) => sendImage(res, 1024, 768));
+  app.get('/L', (req, res) => sendImage(res, 1024, 768, req.query.reason));
 
 } else {
   console.log("Image generation disabled (ENABLE_IMAGES != true)");
